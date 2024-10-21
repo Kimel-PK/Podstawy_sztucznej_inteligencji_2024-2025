@@ -45,11 +45,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1358dc55d66728458062dcadbb29492, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  laser: {fileID: 6545002231993000160}
   speed: 5
+  laser: {fileID: 4659426174636250510}
+  gunDamage: 5
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   shotAction: {fileID: 2502124341310587917, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   mousePositionAction: {fileID: 8482465122273948257, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  hitCandidates: []
+  collideCandidates: []
 --- !u!1 &633198587640162167
 GameObject:
   m_ObjectHideFlags: 0
@@ -61,7 +64,7 @@ GameObject:
   - component: {fileID: 7766812008539031905}
   - component: {fileID: 5921906849739631178}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: PlayerSprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -250,7 +253,7 @@ Transform:
   m_GameObject: {fileID: 6545002231993000160}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.516, z: 0}
+  m_LocalPosition: {x: 0, y: 0.6, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

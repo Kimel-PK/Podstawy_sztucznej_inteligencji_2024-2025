@@ -1,28 +1,21 @@
-using NUnit.Framework.Internal;
 using UnityEngine;
 
-public class BlockSpawner : MonoBehaviour
-{
-     public GameObject  ObstaclePrefab;
-     public float  ObstacleNumber  = 10;
-     public float Range = 10;
+public class BlockSpawner : MonoBehaviour {
+	
+	[SerializeField] private Obstacle obstaclePrefab;
+	[SerializeField] private float obstacleNumber = 10;
+	[SerializeField] private float spawnRange = 10;
 
-    void Awake()
-    {
-        for (int i = 0; i < ObstacleNumber; i++)
-        {
-           GameObject obj= Instantiate(ObstaclePrefab, new Vector3(Random.Range(Range,-Range), Random.Range(Range,-Range), 0), Quaternion.identity);
-            obj.transform.SetParent(transform);
-            Obstacle obstacle = obj.GetComponent<Obstacle>();
-           if (obstacle != null)
-           {
-                obstacle.ColliderRadius = Random.Range(0.5f, 1f);
-           }
-   
-        }
+	private void Awake() {
+		for (int i = 0; i < obstacleNumber; i++) {
+			Obstacle obstacle = Instantiate(obstaclePrefab, new Vector3(Random.Range(spawnRange, -spawnRange), Random.Range(spawnRange, -spawnRange), 0), Quaternion.identity);
+			obstacle.transform.SetParent(transform);
+			obstacle.ColliderRadius = Random.Range(0.5f, 1f);
+		}
+	}
 
-
-        
-    }
-
+	private void Start() {
+		foreach (Transform child in transform)
+			GameManager.Instance.Objects.Add(child);
+	}
 }

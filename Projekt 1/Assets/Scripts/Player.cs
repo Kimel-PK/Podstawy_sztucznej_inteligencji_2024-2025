@@ -1,53 +1,37 @@
-using System;
 using System.Collections.Generic;
-using System.Xml.Linq;
-using UnityEditor.Rendering.LookDev;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using static UnityEditor.Rendering.FilterWindow;
 
 public class Player : MonoBehaviour {
 
-    public List<GameObject> Elements = new List<GameObject>();
-    public float ColliderRadius { get; private set; } = 0.5f;
-    public GameObject laser;
-    public GameObject ObjectSpawner;
-    public Vector3 HitPos;
+	public float ColliderRadius { get; private set; } = 0.5f;
+	
+	[SerializeField] private float speed = 3f;
     
-
-
-
-    [SerializeField] private float speed = 3f;
+	[SerializeField] private Transform laser;
+	[SerializeField] private float gunDamage = 5f;
+	
 	[SerializeField] private InputActionReference moveAction;
 	[SerializeField] private InputActionReference shotAction;
 	[SerializeField] private InputActionReference mousePositionAction;
-    [SerializeField] private List<GameObject> hitcandidates = new List<GameObject>();
-    [SerializeField] private List<GameObject> colidecandidates = new List<GameObject>();
+	
+	[SerializeField] private List<Transform> hitCandidates = new();
+	[SerializeField] private List<Transform> collideCandidates = new();
 
-
-    private Vector2 moveInput;
+	private Vector2 moveInput;
 	private Vector2 mousePosition;
-    private Vector2 lookDir;
-    [SerializeField] private GameObject Hittarget;
-    private Transform Playerspace;
+	private Vector2 lookDir;
+	
+	private Vector3 hitPos;
+	private Transform hitTarget;
 
-
-
-    void Start()
-    {
-        foreach (Transform child in ObjectSpawner.transform)
-        {
-            Elements.Add(child.gameObject);
-        }
-    }
-
-    private void OnEnable() {
+	private void OnEnable() {
 		moveAction.action.performed += Move;
 		moveAction.action.canceled += Move;
 		mousePositionAction.action.performed += MousePosition;
 		shotAction.action.performed += Shot;
 	}
-	
+
 	private void OnDisable() {
 		moveAction.action.performed -= Move;
 		moveAction.action.canceled -= Move;
@@ -56,19 +40,18 @@ public class Player : MonoBehaviour {
 	}
 
 	private void Update() {
-        Playerspace = transform;
+		// move
+		transform.position += new Vector3(moveInput.x, moveInput.y) * (speed * Time.deltaTime);
+		
+		CollideCheck(GameManager.Instance.Objects);
+		RayCastCheck(GameManager.Instance.Objects);
 
-        transform.position += new Vector3(moveInput.x, moveInput.y) * (speed * Time.deltaTime);
-        ColideCheck(Elements);
-        RayCastCheck(Elements);
+		Rotate();
+	}
 
-        Vector2 convertedMousePosition;
-        convertedMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
-        lookDir = convertedMousePosition - new Vector2(transform.position.x, transform.position.y);
-        float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90;
-        transform.rotation = Quaternion.Euler(0, 0, angle);
-
-    }
+	private void FixedUpdate() {
+		AnimateLaser();
+	}
 
 	private void Move(InputAction.CallbackContext context) {
 		if (context.performed)
@@ -76,7 +59,14 @@ public class Player : MonoBehaviour {
 		if (context.canceled)
 			moveInput = Vector2.zero;
 	}
-	
+
+	private void Rotate() {
+		Vector2 convertedMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
+		lookDir = convertedMousePosition - new Vector2(transform.position.x, transform.position.y);
+		float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90;
+		transform.rotation = Quaternion.Euler(0, 0, angle);
+	}
+
 	private void MousePosition(InputAction.CallbackContext context) {
 		if (!context.performed)
 			return;
@@ -87,130 +77,108 @@ public class Player : MonoBehaviour {
 	private void Shot(InputAction.CallbackContext context) {
 		if (!context.performed)
 			return;
-        Vector2 convertedMousePosition;
-        convertedMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
-        //laser.SetActive(true);
+		
+		Debug.Log("Player shot");
+		Debug.DrawLine(transform.position, hitPos, Color.red, .1f);
+		laser.localScale = new Vector3(4f, Vector3.Distance(transform.position, hitPos) - 0.6f, 1f);
+		
+		if (!hitTarget)
+			return;
 
-        if (Hittarget != null)
-        {
-            Debug.Log("Player shot");
-            Debug.DrawLine(transform.position, HitPos, Color.red, .1f);
-            laser.transform.localScale = new Vector3(1, Playerspace.InverseTransformPoint(HitPos).y-0.5f, 1);
-        }
-        else laser.transform.localScale = new Vector3(1, 0, 1);
+		Enemy enemy = hitTarget.GetComponent<Enemy>();
+		if (enemy)
+			enemy.HP -= gunDamage;
+	}
+	
+	private void AnimateLaser() {
+		laser.localScale = Vector3.Lerp(laser.localScale, Vector3.zero, .1f);
+	}
 
-    }
+	private void CollideCheck(List<Transform> elements) {
+		int i = Time.frameCount % elements.Count;
 
+		float distance = (transform.position - elements[i].transform.position).sqrMagnitude;
+		bool meetsCondition = distance < 10;
+
+		if (meetsCondition) {
+			if (!collideCandidates.Contains(elements[i])) {
+				collideCandidates.Add(elements[i]);
+				Debug.DrawRay(transform.position, elements[i].transform.position - transform.position, Color.blue);
+			}
+		} else {
+			collideCandidates.Remove(elements[i]);
+		}
+
+		foreach (Transform element in collideCandidates) {
+			float elementRadius = element.transform.localScale.x / 2;
+			float collisionSize = elementRadius + ColliderRadius;
+			distance = (transform.position - element.transform.position).sqrMagnitude;
+
+			if (distance < collisionSize) {
+				transform.position +=
+					(transform.position - element.transform.position) * (1 - (distance / collisionSize));
+			}
+		}
+	}
+
+	private void RayCastCheck(List<Transform> elements) {
+		Vector3 hitTargetLocal = new(-1, -1, -1);
+		float hitTargetRadius = Mathf.Infinity;
+
+		int i = Time.frameCount % elements.Count;
+		Vector3 elementLocal = transform.InverseTransformPoint(elements[i].transform.position);
+
+		bool meetsCondition = Mathf.Abs(elementLocal.x) < 10 && elementLocal.y > 0;
+
+		if (meetsCondition) {
+			if (!hitCandidates.Contains(elements[i])) {
+				hitCandidates.Add(elements[i]);
+				Debug.DrawRay(transform.position, elements[i].transform.position - transform.position, Color.yellow);
+			}
+		} else {
+			hitCandidates.Remove(elements[i]);
+		}
+
+		if (hitTarget) {
+			hitTargetRadius = hitTarget.transform.localScale.x / 2;
+			hitTargetLocal = transform.InverseTransformPoint(hitTarget.transform.position);
+		}
+
+		if (hitTarget && (Mathf.Abs(hitTargetLocal.x) > hitTargetRadius || hitTargetLocal.y < 0)) {
+			hitTarget = null;
+			hitPos = transform.position + transform.up * 100f;
+		}
+		
+		for (int j = hitCandidates.Count - 1; j >= 0; j--) {
+			if (!hitCandidates[j]) {
+				hitCandidates.RemoveAt(j);
+				continue;
+			}
+
+			float elementRadius = hitCandidates[j].transform.localScale.x / 2;
+			elementLocal = transform.InverseTransformPoint(hitCandidates[j].transform.position);
+			
+			if (Mathf.Abs(elementLocal.x) < elementRadius && elementLocal.y > 0) {
+				if (hitTarget) {
+					hitTargetRadius = hitTarget.transform.localScale.x / 2;
+					hitTargetLocal = transform.InverseTransformPoint(hitTarget.transform.position);
+
+					hitPos = transform.position + transform.TransformDirection(0,
+						hitTargetLocal.y - Mathf.Sqrt((hitTargetRadius * hitTargetRadius) -
+						                              (hitTargetLocal.x * hitTargetLocal.x)), 0);
+					Debug.DrawRay(transform.position, hitPos - transform.position,
+						new Color(0.1f, 0, 0) * hitTargetLocal.y);
+
+					if (elementLocal.y < hitTargetLocal.y || hitTargetLocal.y < 0 || Mathf.Abs(hitTargetLocal.x) > hitTargetRadius)
+						hitTarget = hitCandidates[j];
+				} else
+					hitTarget = hitCandidates[j];
+			}
+		}
+	}
+	
 	private void OnDrawGizmos() {
 		Gizmos.color = Color.blue;
 		Gizmos.DrawWireSphere(transform.position, ColliderRadius);
 	}
-
-    private void ColideCheck(List<GameObject> elements)
-    {
-        float distance;
-        float ColisionSize;
-        float elementradious;
-        int i;
-        i = Time.frameCount % elements.Count;
-
-        distance = (transform.position - elements[i].transform.position).sqrMagnitude;
-
-        bool meetsCondition = distance < 10;
-
-        if (meetsCondition)
-        {
-            if (!colidecandidates.Contains(elements[i]))
-            {
-                colidecandidates.Add(elements[i]);
-                Debug.DrawRay(transform.position, elements[i].transform.position - transform.position, Color.blue);
-            }
-        }
-        else
-        {
-            colidecandidates.Remove(elements[i]);
-        }
-
-        foreach (GameObject element in colidecandidates)
-        {
-
-            elementradious = element.transform.localScale.x / 2;
-            ColisionSize = elementradious + ColliderRadius;
-            distance = (transform.position - element.transform.position).sqrMagnitude;
-
-
-            if (distance < ColisionSize)
-            {
-                transform.position += (transform.position - element.transform.position) * (1 - (distance / ColisionSize));
-            }
-        }
-    }
-
-    private void RayCastCheck(List<GameObject> elements)
-    {
-        Vector3 elementLocal;
-        Vector3 HittargetLocal = new Vector3(-1, -1, -1);
-        float Hittargetradious = Mathf.Infinity;
-
-        int i;
-        i = Time.frameCount % elements.Count;
-        float elementradious;
-        elementLocal = Playerspace.InverseTransformPoint(elements[i].transform.position);
-
-        bool meetsCondition = Mathf.Abs(elementLocal.x) < 10 && elementLocal.y > 0;
-
-        if (meetsCondition)
-        {
-            if (!hitcandidates.Contains(elements[i]))
-            {
-                hitcandidates.Add(elements[i]);
-                Debug.DrawRay(transform.position, elements[i].transform.position - transform.position, Color.yellow);
-            }
-        }
-        else
-        {
-            hitcandidates.Remove(elements[i]);
-        }
-        if (Hittarget != null)
-        {
-            Hittargetradious = Hittarget.transform.localScale.x / 2;
-            HittargetLocal = Playerspace.InverseTransformPoint(Hittarget.transform.position);
-        }
-            if (Hittarget != null && (Mathf.Abs(HittargetLocal.x) > Hittargetradious || HittargetLocal.y < 0))
-        {
-            Hittarget = null;
-            HitPos = Vector3.zero;
-        }
-
-        foreach (GameObject element in hitcandidates)
-        {
-
-            
-
-            elementradious = element.transform.localScale.x / 2;
-            elementLocal = Playerspace.InverseTransformPoint(element.transform.position);
-
-            Debug.Log(HittargetLocal);
-            if (Mathf.Abs(elementLocal.x) < elementradious && elementLocal.y > 0)
-            {
-                if (Hittarget != null)
-                {
-                    Hittargetradious = Hittarget.transform.localScale.x / 2;
-                    HittargetLocal = Playerspace.InverseTransformPoint(Hittarget.transform.position);
-
-                    HitPos = transform.position + Playerspace.TransformDirection(0, HittargetLocal.y - Mathf.Sqrt((Hittargetradious * Hittargetradious) - (HittargetLocal.x * HittargetLocal.x)), 0);
-                    Debug.DrawRay(transform.position, HitPos - transform.position, new Color(0.1f, 0, 0) * HittargetLocal.y);
-
-                    if ((elementLocal.y < HittargetLocal.y || HittargetLocal.y < 0) || Mathf.Abs(HittargetLocal.x) > Hittargetradious)
-                        Hittarget = element;
-                }
-                else Hittarget = element;
-                
-            }
-
-
-        }
-
-    }
-
 }
