@@ -16,6 +16,6 @@ public class BlockSpawner : MonoBehaviour {
 
 	private void Start() {
 		foreach (Transform child in transform)
-			GameManager.Instance.Objects.Add(child);
+			GameManager.Instance.Objects.Add(child.GetComponent<Entity>());
 	}
 }

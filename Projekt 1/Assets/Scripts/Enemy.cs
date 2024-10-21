@@ -1,27 +1,16 @@
 using System;
 using UnityEngine;
 
-public class Enemy : MonoBehaviour {
+public class Enemy : Entity {
 
-    public float HP {
-        get => hp;
-        set {
-            hp = value;
-            if (hp <= 0)
-                Destroy(gameObject);
-        }
-    }
-
-    [field: SerializeField] public float ColliderRadius { get; private set; } = 0.3f;
     
-    [SerializeField] private float hp = 20f;
 
     private void OnDestroy() {
-        GameManager.Instance.Objects.Remove(transform);
+        GameManager.Instance.Objects.Remove(this);
     }
 
     private void Start() {
-        GameManager.Instance.Objects.Add(transform);
+        GameManager.Instance.Objects.Add(this);
     }
     
     private void OnDrawGizmos() {

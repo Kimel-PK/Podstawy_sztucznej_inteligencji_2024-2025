@@ -5,7 +5,7 @@ public class GameManager : MonoBehaviour {
 
 	public static GameManager Instance { get; private set; }
 	
-	public List<Transform> Objects { get; } = new();
+	public List<Entity> Objects { get; } = new();
 
 	private void Awake() {
 		if (!Instance) {

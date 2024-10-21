@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour {
-
-	public float ColliderRadius { get; private set; } = 0.5f;
+public class Player : Entity {
 	
 	[SerializeField] private float speed = 3f;
     
@@ -16,15 +13,15 @@ public class Player : MonoBehaviour {
 	[SerializeField] private InputActionReference shotAction;
 	[SerializeField] private InputActionReference mousePositionAction;
 	
-	[SerializeField] private List<Transform> hitCandidates = new();
-	[SerializeField] private List<Transform> collideCandidates = new();
+	[SerializeField] private List<Entity> hitCandidates = new();
+	[SerializeField] private List<Entity> collideCandidates = new();
 
 	private Vector2 moveInput;
 	private Vector2 mousePosition;
 	private Vector2 lookDir;
 	
 	private Vector3 hitPos;
-	private Transform hitTarget;
+	private Entity hitTarget;
 
 	private void OnEnable() {
 		moveAction.action.performed += Move;
@@ -41,7 +38,7 @@ public class Player : MonoBehaviour {
 	}
 
 	private void Start() {
-		GameManager.Instance.Objects.Add(transform);
+		GameManager.Instance.Objects.Add(this);
 	}
 
 	private void Update() {
@@ -59,7 +56,7 @@ public class Player : MonoBehaviour {
 	}
 
 	private void OnDestroy() {
-		GameManager.Instance.Objects.Remove(transform);
+		GameManager.Instance.Objects.Remove(this);
 	}
 
 	private void Move(InputAction.CallbackContext context) {
@@ -88,7 +85,6 @@ public class Player : MonoBehaviour {
 			return;
 		
 		Debug.Log("Player shot");
-		Debug.DrawLine(transform.position, hitPos, Color.red, .1f);
 		laser.localScale = new Vector3(4f, Vector3.Distance(transform.position, hitPos) - 0.6f, 1f);
 		
 		if (!hitTarget)
@@ -103,58 +99,52 @@ public class Player : MonoBehaviour {
 		laser.localScale = Vector3.Lerp(laser.localScale, Vector3.zero, .1f);
 	}
 
-	private void CollideCheck(List<Transform> elements) {
+	private void CollideCheck(List<Entity> entity) {
 		// discard self
-		elements.Remove(transform);
+		entity.Remove(this);
 		
-		int i = Time.frameCount % elements.Count;
+		int i = Time.frameCount % entity.Count;
 
-		float distance = (transform.position - elements[i].position).sqrMagnitude;
+		float distance = (transform.position - entity[i].Position).sqrMagnitude;
 		bool meetsCondition = distance < 10;
 
 		if (meetsCondition) {
-			if (!collideCandidates.Contains(elements[i])) {
-				collideCandidates.Add(elements[i]);
-				Debug.DrawRay(transform.position, elements[i].position - transform.position, Color.blue);
+			if (!collideCandidates.Contains(entity[i])) {
+				collideCandidates.Add(entity[i]);
+				Debug.DrawRay(transform.position, entity[i].Position - transform.position, Color.blue);
 			}
 		} else
-			collideCandidates.Remove(elements[i]);
+			collideCandidates.Remove(entity[i]);
 
-		foreach (Transform element in collideCandidates) {
-			// NOTE is elementRadius necessary? 
-			float elementRadius = element.localScale.x / 2;
-			float collisionSize = elementRadius + ColliderRadius;
-			distance = (transform.position - element.position).sqrMagnitude;
+		foreach (Entity candidate in collideCandidates) {
+			float collisionSize = entity[i].ColliderRadius + ColliderRadius;
+			distance = (transform.position - candidate.Position).sqrMagnitude;
 
 			if (distance < collisionSize)
-				transform.position += (transform.position - element.position) * (1 - (distance / collisionSize));
+				transform.position += (transform.position - candidate.Position) * (1 - (distance / collisionSize));
 		}
 	}
 
-	private void RayCastCheck(List<Transform> elements) {
+	private void RayCastCheck(List<Entity> entities) {
 		Vector3 hitTargetLocal = new(-1, -1, -1);
-		float hitTargetRadius = Mathf.Infinity;
 
-		int i = Time.frameCount % elements.Count;
-		Vector3 elementLocal = transform.InverseTransformPoint(elements[i].position);
+		int i = Time.frameCount % entities.Count;
+		Vector3 elementLocal = transform.InverseTransformPoint(entities[i].Position);
 
 		bool meetsCondition = Mathf.Abs(elementLocal.x) < 10 && elementLocal.y > 0;
 
 		if (meetsCondition) {
-			if (!hitCandidates.Contains(elements[i])) {
-				hitCandidates.Add(elements[i]);
-				Debug.DrawRay(transform.position, elements[i].position - transform.position, Color.yellow);
+			if (!hitCandidates.Contains(entities[i])) {
+				hitCandidates.Add(entities[i]);
+				Debug.DrawRay(transform.position, entities[i].Position - transform.position, Color.yellow);
 			}
 		} else
-			hitCandidates.Remove(elements[i]);
+			hitCandidates.Remove(entities[i]);
 
-		if (hitTarget) {
-			// NOTE is this necessary if we have ColliderRadius?
-			hitTargetRadius = hitTarget.localScale.x / 2;
-			hitTargetLocal = transform.InverseTransformPoint(hitTarget.position);
-		}
+		if (hitTarget)
+			hitTargetLocal = transform.InverseTransformPoint(hitTarget.Position);
 
-		if (hitTarget && (Mathf.Abs(hitTargetLocal.x) > hitTargetRadius || hitTargetLocal.y < 0)) {
+		if (hitTarget && (Mathf.Abs(hitTargetLocal.x) > entities[i].ColliderRadius || hitTargetLocal.y < 0)) {
 			hitTarget = null;
 			hitPos = transform.position + transform.up * 100f;
 		}
@@ -164,24 +154,20 @@ public class Player : MonoBehaviour {
 				hitCandidates.RemoveAt(j);
 				continue;
 			}
-
-			// NOTE is this necessary if we have ColliderRadius?
-			float elementRadius = hitCandidates[j].localScale.x / 2;
-			elementLocal = transform.InverseTransformPoint(hitCandidates[j].position);
 			
-			if (Mathf.Abs(elementLocal.x) < elementRadius && elementLocal.y > 0) {
+			elementLocal = transform.InverseTransformPoint(hitCandidates[j].Position);
+			
+			if (Mathf.Abs(elementLocal.x) < hitCandidates[j].ColliderRadius && elementLocal.y > 0) {
 				if (hitTarget) {
-					// NOTE is this necessary if we have ColliderRadius?
-					hitTargetRadius = hitTarget.localScale.x / 2;
-					hitTargetLocal = transform.InverseTransformPoint(hitTarget.position);
+					hitTargetLocal = transform.InverseTransformPoint(hitTarget.Position);
 
 					hitPos = transform.position + transform.TransformDirection(0,
-						hitTargetLocal.y - Mathf.Sqrt(hitTargetRadius * hitTargetRadius -
+						hitTargetLocal.y - Mathf.Sqrt(hitTarget.ColliderRadius * hitTarget.ColliderRadius -
 						                              hitTargetLocal.x * hitTargetLocal.x), 0);
 					Debug.DrawRay(transform.position, hitPos - transform.position,
 						new Color(0.1f, 0, 0) * hitTargetLocal.y);
 
-					if (elementLocal.y < hitTargetLocal.y || hitTargetLocal.y < 0 || Mathf.Abs(hitTargetLocal.x) > hitTargetRadius)
+					if (elementLocal.y < hitTargetLocal.y || hitTargetLocal.y < 0 || Mathf.Abs(hitTargetLocal.x) > hitTarget.ColliderRadius)
 						hitTarget = hitCandidates[j];
 				} else
 					hitTarget = hitCandidates[j];
