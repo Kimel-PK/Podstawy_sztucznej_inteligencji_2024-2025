@@ -6,6 +6,7 @@ public class Human : Entity
 
     [SerializeField] private List<Entity> collideCandidates = new();
 
+
     protected virtual void Update()
     {
         CollideCheck(new List<Entity> (GameManager.Instance.Objects));
@@ -18,8 +19,8 @@ public class Human : Entity
 
         int i = Time.frameCount % entity.Count;
 
-        float distance = (transform.position - entity[i].Position).sqrMagnitude;
-        bool meetsCondition = distance < 10;
+        float distance = Vector3.Distance(transform.position, entity[i].Position);
+        bool meetsCondition = distance < 5;
 
         if (meetsCondition)
         {
@@ -34,11 +35,11 @@ public class Human : Entity
 
         foreach (Entity candidate in collideCandidates)
         {
-            float collisionSize = entity[i].ColliderRadius + ColliderRadius;
-            distance = (transform.position - candidate.Position).sqrMagnitude;
+           float collisionSize = candidate.ColliderRadius + ColliderRadius;
+           float distance2 = Vector3.Distance(transform.position, candidate.Position);
 
-            if (distance < collisionSize)
-                transform.position += (transform.position - candidate.Position) * (1 - (distance / collisionSize));
+            if (distance2 <= collisionSize)
+                transform.position += (transform.position - candidate.Position) * (1 - (distance2 / collisionSize));
         }
     }
 }

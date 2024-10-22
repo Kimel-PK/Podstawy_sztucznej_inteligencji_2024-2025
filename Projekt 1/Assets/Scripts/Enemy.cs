@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEditor.Rendering.LookDev;
 using UnityEngine;
+using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 public class Enemy : Human {
@@ -12,6 +15,7 @@ public class Enemy : Human {
     private Vector3 target;
     private Vector3 wanderOffset;
     private List<Obstacle> potentialObstacles = new();
+    private float ObstacleX;
 
     private void OnDestroy() {
         GameManager.Instance.Objects.Remove(this);
@@ -27,12 +31,14 @@ public class Enemy : Human {
             wanderOffset = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(-2.5f, 2.5f), 0);
         target = angry ? Attack() : Flee() + wanderOffset;
         Move();
+        Rotate();
     }
 
     private void Move()
     {
-        Vector3 direction = target - transform.position;
-        // add obstacle avoidance
+        Vector3 direction = (target - transform.position).normalized;
+        //Avoidance();
+
         transform.position += direction.normalized * speed * Time.deltaTime;
     }
 
@@ -64,12 +70,44 @@ public class Enemy : Human {
 
     private void Rotate()
     {
-     
+        Quaternion newrotation;
         Vector2 lookDir = new Vector2 (target.x, target.y) - new Vector2(transform.position.x, transform.position.y);
         float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90;
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+        newrotation = Quaternion.Euler(0, 0, angle);
+        transform.rotation = Quaternion.Lerp(transform.rotation,newrotation,(Time.deltaTime*5)%1);
     }
+  /*  private float Avoidance()
+    {
+        potentialObstacles.Clear();
 
+        foreach (Entity entity in GameManager.Instance.Objects)
+        {
+            if (entity is not Obstacle obstacle)
+                continue;
+
+            potentialObstacles.Add(obstacle);
+        }
+
+
+        //Vector3 FrontOstacleLocal = transform.InverseTransformPoint(FrontOstacle.Position);
+
+        for (int i = 1; i < potentialObstacles.Count; i++)
+        {
+            Vector3 ObstacleLocal = transform.InverseTransformPoint(potentialObstacles[i].Position);
+            //FrontOstacleLocal = transform.InverseTransformPoint(FrontOstacle.Position);
+            if (ObstacleLocal.y < potentialObstacles[i].ColliderRadius)
+            {
+                if (ObstacleLocal.y < 10 && ObstacleLocal.y > 0 && Mathf.Abs(ObstacleLocal.x ) < potentialObstacles[i].ColliderRadius)
+                    Debug.DrawLine(transform.position, potentialObstacles[i].Position, Color.blue);
+                ObstacleX = potentialObstacles[i].ColliderRadius- ObstacleLocal.x;
+            }
+
+        }
+        return Mathf.Max(ObstacleX, 0);
+
+
+    }
+  */
     private void OnDrawGizmosSelected() {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, ColliderRadius);
