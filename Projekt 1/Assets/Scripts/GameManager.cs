@@ -5,7 +5,8 @@ public class GameManager : MonoBehaviour {
 
 	public static GameManager Instance { get; private set; }
 	
-	public List<Entity> Objects { get; } = new();
+	[SerializeField] public List<Entity> Objects = new();
+	public Player Player { get; set; }
 
 	private void Awake() {
 		if (!Instance) {

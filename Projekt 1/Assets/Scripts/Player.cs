@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : Entity {
+public class Player : Human {
 	
 	[SerializeField] private float speed = 3f;
     
@@ -14,7 +14,7 @@ public class Player : Entity {
 	[SerializeField] private InputActionReference mousePositionAction;
 	
 	[SerializeField] private List<Entity> hitCandidates = new();
-	[SerializeField] private List<Entity> collideCandidates = new();
+	
 
 	private Vector2 moveInput;
 	private Vector2 mousePosition;
@@ -39,13 +39,14 @@ public class Player : Entity {
 
 	private void Start() {
 		GameManager.Instance.Objects.Add(this);
+		GameManager.Instance.Player = this;
 	}
 
-	private void Update() {
+	protected override void Update() {
 		// move
 		transform.position += new Vector3(moveInput.x, moveInput.y) * (speed * Time.deltaTime);
 		
-		CollideCheck(GameManager.Instance.Objects);
+		base.Update();
 		RayCastCheck(GameManager.Instance.Objects);
 
 		Rotate();
@@ -57,6 +58,7 @@ public class Player : Entity {
 
 	private void OnDestroy() {
 		GameManager.Instance.Objects.Remove(this);
+		GameManager.Instance.Player = null;
 	}
 
 	private void Move(InputAction.CallbackContext context) {
@@ -99,31 +101,7 @@ public class Player : Entity {
 		laser.localScale = Vector3.Lerp(laser.localScale, Vector3.zero, .1f);
 	}
 
-	private void CollideCheck(List<Entity> entity) {
-		// discard self
-		entity.Remove(this);
-		
-		int i = Time.frameCount % entity.Count;
-
-		float distance = (transform.position - entity[i].Position).sqrMagnitude;
-		bool meetsCondition = distance < 10;
-
-		if (meetsCondition) {
-			if (!collideCandidates.Contains(entity[i])) {
-				collideCandidates.Add(entity[i]);
-				Debug.DrawRay(transform.position, entity[i].Position - transform.position, Color.blue);
-			}
-		} else
-			collideCandidates.Remove(entity[i]);
-
-		foreach (Entity candidate in collideCandidates) {
-			float collisionSize = entity[i].ColliderRadius + ColliderRadius;
-			distance = (transform.position - candidate.Position).sqrMagnitude;
-
-			if (distance < collisionSize)
-				transform.position += (transform.position - candidate.Position) * (1 - (distance / collisionSize));
-		}
-	}
+	
 
 	private void RayCastCheck(List<Entity> entities) {
 		Vector3 hitTargetLocal = new(-1, -1, -1);
