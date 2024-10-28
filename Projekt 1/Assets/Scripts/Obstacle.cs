@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class Obstacle : Entity {
 
-	private void Start() {
+	protected override void Start() {
+		base.Start();
 		transform.localScale = Vector3.one * ColliderRadius * 2;
 	}
 

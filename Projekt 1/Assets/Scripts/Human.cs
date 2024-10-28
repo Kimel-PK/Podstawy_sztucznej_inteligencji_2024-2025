@@ -3,9 +3,7 @@ using UnityEngine;
 
 public class Human : Entity
 {
-
     [SerializeField] private List<Entity> collideCandidates = new();
-
 
     protected virtual void Update()
     {
@@ -33,13 +31,13 @@ public class Human : Entity
         else
             collideCandidates.Remove(entity[i]);
 
-        foreach (Entity candidate in collideCandidates)
+        for (int j = collideCandidates.Count - 1; j >= 0; j--)
         {
-           float collisionSize = candidate.ColliderRadius + ColliderRadius;
-           float distance2 = Vector3.Distance(transform.position, candidate.Position);
+           float collisionSize = collideCandidates[j].ColliderRadius + ColliderRadius;
+           float distance2 = Vector3.Distance(transform.position, collideCandidates[j].Position);
 
             if (distance2 <= collisionSize)
-                transform.position += (transform.position - candidate.Position) * (1 - (distance2 / collisionSize));
+                transform.position += (transform.position - collideCandidates[j].Position) * (1 - (distance2 / collisionSize));
         }
     }
 }

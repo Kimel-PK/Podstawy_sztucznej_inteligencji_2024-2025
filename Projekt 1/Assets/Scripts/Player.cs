@@ -37,8 +37,8 @@ public class Player : Human {
 		shotAction.action.performed -= Shot;
 	}
 
-	private void Start() {
-		GameManager.Instance.Objects.Add(this);
+	protected override void Start() {
+		base.Start();
 		GameManager.Instance.Player = this;
 	}
 
@@ -56,8 +56,8 @@ public class Player : Human {
 		AnimateLaser();
 	}
 
-	private void OnDestroy() {
-		GameManager.Instance.Objects.Remove(this);
+	protected override void OnDestroy() {
+		base.OnDestroy();
 		GameManager.Instance.Player = null;
 	}
 

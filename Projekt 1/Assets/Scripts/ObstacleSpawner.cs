@@ -13,9 +13,4 @@ public class BlockSpawner : MonoBehaviour {
 			obstacle.ColliderRadius = Random.Range(0.5f, 1f);
 		}
 	}
-
-	private void Start() {
-		foreach (Transform child in transform)
-			GameManager.Instance.Objects.Add(child.GetComponent<Entity>());
-	}
 }

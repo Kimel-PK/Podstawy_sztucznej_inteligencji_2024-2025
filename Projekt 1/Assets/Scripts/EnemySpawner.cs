@@ -1,0 +1,40 @@
+using System.Linq;
+using System.Threading.Tasks;
+using UnityEngine;
+using Random = UnityEngine.Random;
+
+public class EnemySpawner : MonoBehaviour {
+
+    [SerializeField] private Enemy enemyPrefab;
+    [SerializeField] private int maxEnemies;
+    
+    private float spawnTimer = 5f;
+
+    private async void Start() {
+        await Task.Delay(1000);
+        for (int i = 0; i < 5; i++)
+            SpawnEnemy();
+    }
+    
+    private void Update() {
+        spawnTimer -= Time.deltaTime;
+        if (spawnTimer >= 0f)
+            return;
+        
+        SpawnEnemy();
+        spawnTimer = Random.Range(5f, 8f);
+    }
+
+    private void SpawnEnemy() {
+        if (GameManager.Instance.Objects.Count(entity => entity is Enemy) >= maxEnemies)
+            return;
+        
+        Vector3 spawnPosition;
+        do {
+            spawnPosition = new Vector3(Random.Range(-15, 15), Random.Range(-15, 15), 0);
+        } while (Vector3.Distance(GameManager.Instance.Player.Position, spawnPosition) < 5f);
+
+        Enemy enemy = Instantiate(enemyPrefab, spawnPosition, Quaternion.identity);
+        enemy.transform.SetParent(transform);
+    }
+}
