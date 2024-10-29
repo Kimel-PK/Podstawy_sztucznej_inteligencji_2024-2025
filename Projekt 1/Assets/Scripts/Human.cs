@@ -3,14 +3,15 @@ using UnityEngine;
 
 public class Human : Entity
 {
-    [SerializeField] private List<Entity> collideCandidates = new();
+    [SerializeField] protected List<Entity> collideCandidates = new();
+    protected float colliderCheckDistance = 5;
 
     protected virtual void Update()
     {
         CollideCheck(new List<Entity> (GameManager.Instance.Objects));
     }
 
-    private void CollideCheck(List<Entity> entity)
+    protected virtual void CollideCheck(List<Entity> entity)
     {
         // discard self
         entity.Remove(this);
@@ -18,7 +19,7 @@ public class Human : Entity
         int i = Time.frameCount % entity.Count;
 
         float distance = Vector3.Distance(transform.position, entity[i].Position);
-        bool meetsCondition = distance < 5;
+        bool meetsCondition = distance < colliderCheckDistance;
 
         if (meetsCondition)
         {
@@ -33,7 +34,13 @@ public class Human : Entity
 
         for (int j = collideCandidates.Count - 1; j >= 0; j--)
         {
-           float collisionSize = collideCandidates[j].ColliderRadius + ColliderRadius;
+            if (!collideCandidates[j])
+            {
+                collideCandidates.RemoveAt(j);
+                continue;
+            }
+
+            float collisionSize = collideCandidates[j].ColliderRadius + ColliderRadius;
            float distance2 = Vector3.Distance(transform.position, collideCandidates[j].Position);
 
             if (distance2 <= collisionSize)

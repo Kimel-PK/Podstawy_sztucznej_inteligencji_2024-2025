@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -7,20 +8,26 @@ public class Enemy : Human {
     [SerializeField] private float speed = 1f;
     [SerializeField] private bool angry;
     [SerializeField] private float offset = 2f;
+    [SerializeField] private int scatterThreshold = 1;
+    [SerializeField] private int formGroupThreshold = 4;
+    [SerializeField] private float playerProximityAnger = 5f;
 
     private Vector3 target;
     private Vector3 wanderOffset;
-    private readonly List<Obstacle> potentialObstacles = new();
-    private float obstacleX;
-    private bool invoked;
-    private Entity frontObstacle;
     
+    private float obstacleX;
+    private int nearEnemiesCount;
+    private Obstacle frontObstacle;
+
     protected override void Update()
     {
-        if (invoked == false) AddObjects();
         base.Update();
         if (Time.frameCount % Random.Range(60, 100) == 0)
             wanderOffset = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(-2.5f, 2.5f), 0);
+        
+        if (Vector3.Distance(GameManager.Instance.Player.Position, Position) < playerProximityAnger)
+            angry = true;
+        
         target = angry ? Attack() : Flee() + wanderOffset;
         Move();
         Rotate();
@@ -37,32 +44,19 @@ public class Enemy : Human {
 
     private Vector3 Flee() {
         Player player = GameManager.Instance.Player;
-        
-        Obstacle closestObstacle = potentialObstacles[0];
-        for (int i = 1; i < potentialObstacles.Count; i++)
+
+        Obstacle closestObstacle = GameManager.Instance.Obstacles[0];
+        for (int i = 1; i < GameManager.Instance.Obstacles.Count; i++)
         {
-            if (Vector3.Distance(Position, potentialObstacles[i].Position) < Vector3.Distance(Position, closestObstacle.Position))
-                closestObstacle = potentialObstacles[i];
+            if (Vector3.Distance(Position, GameManager.Instance.Obstacles[i].Position) < Vector3.Distance(Position, closestObstacle.Position))
+                closestObstacle = GameManager.Instance.Obstacles[i];
         }
-        return closestObstacle.Position + ((closestObstacle.Position - player.Position).normalized * (closestObstacle.ColliderRadius + 2f));
+        return closestObstacle.Position + (closestObstacle.Position - player.Position).normalized * (closestObstacle.ColliderRadius + 2f);
     }
 
     private Vector3 Attack ()
     {
         return GameManager.Instance.Player.transform.position;
-    }
-    
-    private void AddObjects()
-    {
-        foreach (Entity entity in GameManager.Instance.Objects)
-        {
-            if (entity is not Obstacle obstacle)
-                continue;
-
-            potentialObstacles.Add(obstacle);
-        }
-        frontObstacle = potentialObstacles[0];
-        invoked = true;
     }
 
     private void Rotate()
@@ -75,15 +69,18 @@ public class Enemy : Human {
     
     private void Avoidance()
     {
+        if (GameManager.Instance.Obstacles.Count == 0)
+            return;
+        
         Vector3 frontObstacleLocal = new(100, 100, 100);
 
-        for (int i = 1; i < potentialObstacles.Count; i++)
+        for (int i = 1; i < GameManager.Instance.Obstacles.Count; i++)
         {
-            Vector3 obstacleLocal = transform.InverseTransformPoint(potentialObstacles[i].Position);
+            Vector3 obstacleLocal = transform.InverseTransformPoint(GameManager.Instance.Obstacles[i].Position);
          
-            if (obstacleLocal.y < 5 && obstacleLocal.y > 0 && Mathf.Abs(obstacleLocal.x) < potentialObstacles[i].ColliderRadius + ColliderRadius+ offset && frontObstacleLocal.y > obstacleLocal.y)
+            if (obstacleLocal.y < 5 && obstacleLocal.y > 0 && Mathf.Abs(obstacleLocal.x) < GameManager.Instance.Obstacles[i].ColliderRadius + ColliderRadius+ offset && frontObstacleLocal.y > obstacleLocal.y)
             {
-                frontObstacle = potentialObstacles[i];
+                frontObstacle = GameManager.Instance.Obstacles[i];
                 frontObstacleLocal = transform.InverseTransformPoint(frontObstacle.Position);
             }
             if (frontObstacle)
@@ -91,18 +88,29 @@ public class Enemy : Human {
                 Debug.DrawLine(transform.position, frontObstacle.Position, Color.blue);
                 obstacleX = Mathf.Sign(frontObstacleLocal.x) * (Mathf.Abs( frontObstacleLocal.x)-( frontObstacle.ColliderRadius+ ColliderRadius+ offset)) ;
             }
-            if ((frontObstacleLocal.y > 5 || frontObstacleLocal.y < 0 || Mathf.Abs(frontObstacleLocal.x) > frontObstacle.ColliderRadius+ ColliderRadius+ offset) && frontObstacle)
+            if (frontObstacle && (frontObstacleLocal.y > 5 || frontObstacleLocal.y < 0 || Mathf.Abs(frontObstacleLocal.x) > frontObstacle.ColliderRadius+ ColliderRadius+ offset))
             {
                 frontObstacle = null;
                 obstacleX = 0;
             }
         }
     }
-    
+
+    protected override void CollideCheck(List<Entity> entity)
+    {
+        colliderCheckDistance = angry ? 7.5f : 5f;
+        base.CollideCheck(entity);
+        nearEnemiesCount = collideCandidates.Count(e => e is Enemy);
+        if (angry && nearEnemiesCount <= scatterThreshold)
+            angry = false;
+        else if (!angry && nearEnemiesCount >= formGroupThreshold)
+            angry = true;
+    }
+
     private void OnDrawGizmosSelected() {
         if (!Application.isPlaying)
             return;
-        Gizmos.color = Color.red;
+        Gizmos.color = angry ? Color.red : Color.blue;
         Gizmos.DrawWireSphere(transform.position, ColliderRadius);
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(Flee(), .5f);

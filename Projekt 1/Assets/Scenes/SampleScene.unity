@@ -478,7 +478,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b85dbd9121d66324395862cd46d4392e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Objects: []
+  <Objects>k__BackingField: []
+  <Obstacles>k__BackingField: []
 --- !u!1 &1300714623
 GameObject:
   m_ObjectHideFlags: 0
@@ -525,6 +526,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 7309536512431907672, guid: c3d594e11cf9bdb4487d60bb5fc9bf8b, type: 3}
   maxEnemies: 30
+  minSpawnTime: 2
+  maxSpawnTime: 3
 --- !u!1 &1511453642
 GameObject:
   m_ObjectHideFlags: 0

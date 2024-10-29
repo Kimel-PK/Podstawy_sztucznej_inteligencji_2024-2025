@@ -7,6 +7,8 @@ public class EnemySpawner : MonoBehaviour {
 
     [SerializeField] private Enemy enemyPrefab;
     [SerializeField] private int maxEnemies;
+    [SerializeField] private float minSpawnTime = 5f;
+    [SerializeField] private float maxSpawnTime = 8f;
     
     private float spawnTimer = 5f;
 
@@ -22,7 +24,7 @@ public class EnemySpawner : MonoBehaviour {
             return;
         
         SpawnEnemy();
-        spawnTimer = Random.Range(5f, 8f);
+        spawnTimer = Random.Range(minSpawnTime, maxSpawnTime);
     }
 
     private void SpawnEnemy() {
