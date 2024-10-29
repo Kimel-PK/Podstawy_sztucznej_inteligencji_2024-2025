@@ -138,6 +138,6 @@ MonoBehaviour:
   speed: 2
   angry: 0
   offset: 2
-  scatterThreshold: 1
+  scatterThreshold: -1
   formGroupThreshold: 3
   playerProximityAnger: 5

@@ -18,12 +18,19 @@ public class Enemy : Human {
     private float obstacleX;
     private int nearEnemiesCount;
     private Obstacle frontObstacle;
+    private float courageTimeout;
+    private bool courage;
 
     protected override void Update()
     {
         base.Update();
         if (Time.frameCount % Random.Range(60, 100) == 0)
             wanderOffset = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(-2.5f, 2.5f), 0);
+
+        if (courageTimeout > 0f)
+            courageTimeout -= Time.deltaTime;
+        if (Time.frameCount % Random.Range(20, 200) == 0)
+            courageTimeout = Random.Range(4f, 8f);
         
         if (Vector3.Distance(GameManager.Instance.Player.Position, Position) < playerProximityAnger)
             angry = true;
@@ -39,7 +46,7 @@ public class Enemy : Human {
         Avoidance();
         direction = transform.InverseTransformDirection(direction) + new Vector3(obstacleX, 0, 0);
         direction = transform.TransformDirection(direction);
-        transform.position += direction.normalized * (speed * Time.deltaTime);
+        transform.position += direction.normalized * ((angry ? speed * 1.3f : speed) * Time.deltaTime);
     }
 
     private Vector3 Flee() {
