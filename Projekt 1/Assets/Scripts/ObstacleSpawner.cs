@@ -1,16 +1,62 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BlockSpawner : MonoBehaviour {
 	
 	[SerializeField] private Obstacle obstaclePrefab;
-	[SerializeField] private float obstacleNumber = 10;
-	[SerializeField] private float spawnRange = 10;
+	[SerializeField] private int obstacleNumber = 10;
+	
+	[SerializeField] private Vector2 spawnRange = new(10, 10);
+	[SerializeField] private float minRadius = 0.5f;
+	[SerializeField] private float maxRadius = 1f;
+	
+	private readonly List<Obstacle> spawnedObstacles = new();
 
-	private void Awake() {
-		for (int i = 0; i < obstacleNumber; i++) {
-			Obstacle obstacle = Instantiate(obstaclePrefab, new Vector3(Random.Range(spawnRange, -spawnRange), Random.Range(spawnRange, -spawnRange), 0), Quaternion.identity);
+	private void Awake()
+	{
+		SpawnObstacles();
+	}
+
+	private void SpawnObstacles()
+	{
+		int attempts = 0;
+		int maxAttempts = obstacleNumber * 10; // to avoid an infinite loop if there is no space
+
+		while (spawnedObstacles.Count < obstacleNumber && attempts < maxAttempts)
+		{
+			attempts++;
+
+			// Generate random position within the specified range
+			float x = Random.Range(-spawnRange.x, spawnRange.x);
+			float y = Random.Range(-spawnRange.y, spawnRange.y);
+			Vector3 spawnPosition = new(x, y, 0);
+
+			// Generate a random diameter and calculate radius
+			float radius = Random.Range(minRadius, maxRadius);
+
+			// Check for overlap with existing spheres
+			if (IsOverlapping(spawnPosition, radius))
+				continue;
+			
+			Obstacle obstacle = Instantiate(obstaclePrefab, spawnPosition, Quaternion.identity);
+			
 			obstacle.transform.SetParent(transform);
-			obstacle.ColliderRadius = Random.Range(0.5f, 1f);
+			spawnedObstacles.Add(obstacle);
+				
+			obstacle.SetRadius(radius);
 		}
+	}
+
+	bool IsOverlapping(Vector3 newPosition, float newRadius)
+	{
+		for (int i = 0; i < spawnedObstacles.Count; i++)
+		{
+			float distance = Vector3.Distance(newPosition, spawnedObstacles[i].Position);
+			float minDistance = newRadius + spawnedObstacles[i].ColliderRadius;
+
+			if (distance < minDistance)
+				return true;
+		}
+		return false;
 	}
 }

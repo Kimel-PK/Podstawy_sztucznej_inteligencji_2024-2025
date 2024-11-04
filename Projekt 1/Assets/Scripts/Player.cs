@@ -86,7 +86,6 @@ public class Player : Human {
 		if (!context.performed)
 			return;
 		
-		Debug.Log("Player shot");
 		laser.localScale = new Vector3(4f, Vector3.Distance(transform.position, hitPos) - 0.6f, 1f);
 		
 		if (!hitTarget)

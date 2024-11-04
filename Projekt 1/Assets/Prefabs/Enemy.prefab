@@ -141,3 +141,7 @@ MonoBehaviour:
   scatterThreshold: -1
   formGroupThreshold: 3
   playerProximityAnger: 5
+  minCourageDelay: 3
+  maxCourageDelay: 12
+  minCourageDuration: 4
+  maxCourageDuration: 6

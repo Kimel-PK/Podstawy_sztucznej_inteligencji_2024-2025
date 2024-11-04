@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class Obstacle : Entity {
 
-	protected override void Start() {
+	protected override void Start()
+	{
 		base.Start();
-		transform.localScale = Vector3.one * ColliderRadius * 2;
 		GameManager.Instance.Obstacles.Add(this);
 	}
 
@@ -14,7 +14,14 @@ public class Obstacle : Entity {
 		GameManager.Instance.Obstacles.Remove(this);
 	}
 
-	private void OnDrawGizmos() {
+	public void SetRadius(float radius)
+	{
+		ColliderRadius = radius;
+		transform.localScale = Vector3.one * radius * 2;
+	}
+
+	private void OnDrawGizmos()
+	{
 		Gizmos.color = Color.white;
 		Gizmos.DrawWireSphere(transform.position, ColliderRadius);
 	}

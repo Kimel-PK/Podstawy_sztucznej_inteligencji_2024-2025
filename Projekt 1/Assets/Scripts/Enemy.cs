@@ -11,6 +11,11 @@ public class Enemy : Human {
     [SerializeField] private int scatterThreshold = 1;
     [SerializeField] private int formGroupThreshold = 4;
     [SerializeField] private float playerProximityAnger = 5f;
+    
+    [SerializeField] private float minCourageDelay = 6f;
+    [SerializeField] private float maxCourageDelay = 12f;
+    [SerializeField] private float minCourageDuration = 4f;
+    [SerializeField] private float maxCourageDuration = 10f;
 
     private Vector3 target;
     private Vector3 wanderOffset;
@@ -18,8 +23,10 @@ public class Enemy : Human {
     private float obstacleX;
     private int nearEnemiesCount;
     private Obstacle frontObstacle;
-    private float courageTimeout;
-    private bool courage;
+
+    private float courageDelayTimer;
+    private float courageTimer;
+    private Obstacle courageObstacle;
 
     protected override void Update()
     {
@@ -27,11 +34,8 @@ public class Enemy : Human {
         if (Time.frameCount % Random.Range(60, 100) == 0)
             wanderOffset = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(-2.5f, 2.5f), 0);
 
-        if (courageTimeout > 0f)
-            courageTimeout -= Time.deltaTime;
-        if (Time.frameCount % Random.Range(20, 200) == 0)
-            courageTimeout = Random.Range(4f, 8f);
-        
+        Courage();
+
         if (Vector3.Distance(GameManager.Instance.Player.Position, Position) < playerProximityAnger)
             angry = true;
         
@@ -52,18 +56,44 @@ public class Enemy : Human {
     private Vector3 Flee() {
         Player player = GameManager.Instance.Player;
 
-        Obstacle closestObstacle = GameManager.Instance.Obstacles[0];
-        for (int i = 1; i < GameManager.Instance.Obstacles.Count; i++)
-        {
-            if (Vector3.Distance(Position, GameManager.Instance.Obstacles[i].Position) < Vector3.Distance(Position, closestObstacle.Position))
-                closestObstacle = GameManager.Instance.Obstacles[i];
-        }
-        return closestObstacle.Position + (closestObstacle.Position - player.Position).normalized * (closestObstacle.ColliderRadius + 2f);
+        // if courage mode, just go to picked obstacle no matter what
+        if (courageObstacle)
+            return courageObstacle.Position + (courageObstacle.Position - player.Position).normalized * (courageObstacle.ColliderRadius + 2f);
+        
+        // sort obstacles by distance to enemy
+        List<Obstacle> obstaclesSorted = GameManager.Instance.Obstacles.OrderBy(obstacle => Vector3.Distance(obstacle.Position, Position)).ToList();
+        
+        // return best hiding spot
+        return obstaclesSorted[0].Position + (obstaclesSorted[0].Position - player.Position).normalized * (obstaclesSorted[0].ColliderRadius + 2f);
     }
 
     private Vector3 Attack ()
     {
         return GameManager.Instance.Player.transform.position;
+    }
+
+    private void Courage()
+    {
+        if (courageObstacle)
+        {
+            if (courageTimer > 0f)
+                courageTimer -= Time.deltaTime;
+            else
+            {
+                courageObstacle = null;
+                courageDelayTimer = Random.Range(minCourageDelay, maxCourageDelay);
+            }
+        }
+        else
+        {
+            if (courageDelayTimer > 0f)
+                courageDelayTimer -= Time.deltaTime;
+            else
+            {
+                courageObstacle = GameManager.Instance.Obstacles[Random.Range(0, GameManager.Instance.Obstacles.Count)];
+                courageTimer = Random.Range(minCourageDuration, maxCourageDuration);
+            }
+        }
     }
 
     private void Rotate()

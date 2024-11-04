@@ -526,8 +526,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 7309536512431907672, guid: c3d594e11cf9bdb4487d60bb5fc9bf8b, type: 3}
   maxEnemies: 30
-  minSpawnTime: 2
-  maxSpawnTime: 3
+  minSpawnTime: 5
+  maxSpawnTime: 8
 --- !u!1 &1511453642
 GameObject:
   m_ObjectHideFlags: 0
@@ -558,8 +558,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstaclePrefab: {fileID: 5729623744686908077, guid: 33fa2e0122c241b44a4ff1cf2e6e1cc4, type: 3}
-  obstacleNumber: 10
-  spawnRange: 10
+  obstacleNumber: 15
+  spawnRange: {x: 15, y: 15}
+  minRadius: 0.5
+  maxRadius: 1
 --- !u!4 &1511453644
 Transform:
   m_ObjectHideFlags: 0
