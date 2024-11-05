@@ -389,6 +389,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 2171252513680409951, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2171252513680409951, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2171252513680409951, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5210208115442894835, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -427,6 +439,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5210208115442894835, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6946228236458241894, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6946228236458241894, guid: 3b09071fbcca3fc4dbf2724ef6bf63ae, type: 3}
+      propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -558,10 +578,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   obstaclePrefab: {fileID: 5729623744686908077, guid: 33fa2e0122c241b44a4ff1cf2e6e1cc4, type: 3}
-  obstacleNumber: 15
+  obstacleNumber: 20
   spawnRange: {x: 15, y: 15}
   minRadius: 0.5
   maxRadius: 1
+  agentMaxRadius: 0.52
 --- !u!4 &1511453644
 Transform:
   m_ObjectHideFlags: 0

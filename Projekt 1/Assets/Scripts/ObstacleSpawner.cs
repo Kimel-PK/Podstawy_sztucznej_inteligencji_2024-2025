@@ -9,6 +9,7 @@ public class BlockSpawner : MonoBehaviour {
 	[SerializeField] private Vector2 spawnRange = new(10, 10);
 	[SerializeField] private float minRadius = 0.5f;
 	[SerializeField] private float maxRadius = 1f;
+	[SerializeField] private float agentMaxRadius = 0.5f;
 	
 	private readonly List<Obstacle> spawnedObstacles = new();
 
@@ -20,7 +21,7 @@ public class BlockSpawner : MonoBehaviour {
 	private void SpawnObstacles()
 	{
 		int attempts = 0;
-		int maxAttempts = obstacleNumber * 10; // to avoid an infinite loop if there is no space
+		int maxAttempts = obstacleNumber * 10; // to avoid an infinite loop if there is no space left
 
 		while (spawnedObstacles.Count < obstacleNumber && attempts < maxAttempts)
 		{
@@ -47,12 +48,12 @@ public class BlockSpawner : MonoBehaviour {
 		}
 	}
 
-	bool IsOverlapping(Vector3 newPosition, float newRadius)
+	private bool IsOverlapping(Vector3 newPosition, float newRadius)
 	{
 		for (int i = 0; i < spawnedObstacles.Count; i++)
 		{
 			float distance = Vector3.Distance(newPosition, spawnedObstacles[i].Position);
-			float minDistance = newRadius + spawnedObstacles[i].ColliderRadius;
+			float minDistance = newRadius + spawnedObstacles[i].ColliderRadius + agentMaxRadius * 2;
 
 			if (distance < minDistance)
 				return true;

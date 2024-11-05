@@ -19,6 +19,9 @@ public class EnemySpawner : MonoBehaviour {
     }
     
     private void Update() {
+        if (!GameManager.Instance.Player)
+            return;
+        
         spawnTimer -= Time.deltaTime;
         if (spawnTimer >= 0f)
             return;

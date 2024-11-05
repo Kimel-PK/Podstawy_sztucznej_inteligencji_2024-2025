@@ -72,7 +72,7 @@ public class Player : Human {
 		Vector2 convertedMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
 		lookDir = convertedMousePosition - new Vector2(transform.position.x, transform.position.y);
 		float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90;
-		transform.rotation = Quaternion.Euler(0, 0, angle);
+		entitySprite.rotation = Quaternion.Euler(0, 0, angle);
 	}
 
 	private void MousePosition(InputAction.CallbackContext context) {
@@ -90,9 +90,8 @@ public class Player : Human {
 		
 		if (!hitTarget)
 			return;
-
-		Enemy enemy = hitTarget.GetComponent<Enemy>();
-		if (enemy)
+		
+		if (hitTarget is Enemy enemy)
 			enemy.HP -= gunDamage;
 	}
 	
@@ -100,48 +99,47 @@ public class Player : Human {
 		laser.localScale = Vector3.Lerp(laser.localScale, Vector3.zero, .1f);
 	}
 
-	
-
 	private void RayCastCheck(List<Entity> entities) {
 		Vector3 hitTargetLocal = new(-1, -1, -1);
 
 		int i = Time.frameCount % entities.Count;
-		Vector3 elementLocal = transform.InverseTransformPoint(entities[i].Position);
+		Vector3 elementLocal = entitySprite.InverseTransformPoint(entities[i].Position);
 
 		bool meetsCondition = Mathf.Abs(elementLocal.x) < 10 && elementLocal.y > 0;
 
 		if (meetsCondition) {
 			if (!hitCandidates.Contains(entities[i])) {
 				hitCandidates.Add(entities[i]);
-				Debug.DrawRay(transform.position, entities[i].Position - transform.position, Color.yellow);
+				Debug.DrawRay(entitySprite.position, entities[i].Position - entitySprite.position, Color.yellow);
 			}
 		} else
 			hitCandidates.Remove(entities[i]);
 
 		if (hitTarget)
-			hitTargetLocal = transform.InverseTransformPoint(hitTarget.Position);
+			hitTargetLocal = entitySprite.InverseTransformPoint(hitTarget.Position);
 
 		if (hitTarget && (Mathf.Abs(hitTargetLocal.x) > entities[i].ColliderRadius || hitTargetLocal.y < 0)) {
 			hitTarget = null;
-			hitPos = transform.position + transform.up * 100f;
+			hitPos = entitySprite.position + entitySprite.up * 100f;
 		}
 		
 		for (int j = hitCandidates.Count - 1; j >= 0; j--) {
+			// remove null elements
 			if (!hitCandidates[j]) {
 				hitCandidates.RemoveAt(j);
 				continue;
 			}
 			
-			elementLocal = transform.InverseTransformPoint(hitCandidates[j].Position);
+			elementLocal = entitySprite.InverseTransformPoint(hitCandidates[j].Position);
 			
 			if (Mathf.Abs(elementLocal.x) < hitCandidates[j].ColliderRadius && elementLocal.y > 0) {
 				if (hitTarget) {
-					hitTargetLocal = transform.InverseTransformPoint(hitTarget.Position);
+					hitTargetLocal = entitySprite.InverseTransformPoint(hitTarget.Position);
 
-					hitPos = transform.position + transform.TransformDirection(0,
+					hitPos = entitySprite.position + entitySprite.TransformDirection(0,
 						hitTargetLocal.y - Mathf.Sqrt(hitTarget.ColliderRadius * hitTarget.ColliderRadius -
 						                              hitTargetLocal.x * hitTargetLocal.x), 0);
-					Debug.DrawRay(transform.position, hitPos - transform.position,
+					Debug.DrawRay(entitySprite.position, hitPos - entitySprite.position,
 						new Color(0.1f, 0, 0) * hitTargetLocal.y);
 
 					if (elementLocal.y < hitTargetLocal.y || hitTargetLocal.y < 0 || Mathf.Abs(hitTargetLocal.x) > hitTarget.ColliderRadius)

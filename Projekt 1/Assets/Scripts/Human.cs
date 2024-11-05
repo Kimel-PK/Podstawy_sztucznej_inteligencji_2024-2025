@@ -16,6 +16,8 @@ public class Human : Entity
         // discard self
         entity.Remove(this);
 
+        if (entity.Count == 0)
+            return;
         int i = Time.frameCount % entity.Count;
 
         float distance = Vector3.Distance(transform.position, entity[i].Position);

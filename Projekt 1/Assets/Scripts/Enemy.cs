@@ -16,8 +16,12 @@ public class Enemy : Human {
     [SerializeField] private float maxCourageDelay = 12f;
     [SerializeField] private float minCourageDuration = 4f;
     [SerializeField] private float maxCourageDuration = 10f;
+    
+    [SerializeField] private float attackDelay = 1f;
+    [SerializeField] private float damage = 2f;
 
     private Vector3 target;
+    private Vector3 fleeTarget;
     private Vector3 wanderOffset;
     
     private float obstacleX;
@@ -28,8 +32,13 @@ public class Enemy : Human {
     private float courageTimer;
     private Obstacle courageObstacle;
 
+    private float attackDelayTimer;
+
     protected override void Update()
     {
+        if (!GameManager.Instance.Player)
+            return;
+        
         base.Update();
         if (Time.frameCount % Random.Range(60, 100) == 0)
             wanderOffset = new Vector3(Random.Range(-2.5f, 2.5f), Random.Range(-2.5f, 2.5f), 0);
@@ -38,10 +47,14 @@ public class Enemy : Human {
 
         if (Vector3.Distance(GameManager.Instance.Player.Position, Position) < playerProximityAnger)
             angry = true;
+
+        fleeTarget = GetFleeTarget();
         
-        target = angry ? Attack() : Flee() + wanderOffset;
+        target = angry ? GetPlayerPosition() : fleeTarget + wanderOffset;
         Move();
         Rotate();
+
+        DealDamage();
     }
 
     private void Move()
@@ -53,7 +66,7 @@ public class Enemy : Human {
         transform.position += direction.normalized * ((angry ? speed * 1.3f : speed) * Time.deltaTime);
     }
 
-    private Vector3 Flee() {
+    private Vector3 GetFleeTarget() {
         Player player = GameManager.Instance.Player;
 
         // if courage mode, just go to picked obstacle no matter what
@@ -67,9 +80,9 @@ public class Enemy : Human {
         return obstaclesSorted[0].Position + (obstaclesSorted[0].Position - player.Position).normalized * (obstaclesSorted[0].ColliderRadius + 2f);
     }
 
-    private Vector3 Attack ()
+    private Vector3 GetPlayerPosition ()
     {
-        return GameManager.Instance.Player.transform.position;
+        return GameManager.Instance.Player.Position;
     }
 
     private void Courage()
@@ -98,12 +111,12 @@ public class Enemy : Human {
 
     private void Rotate()
     {
-        Vector2 lookDir = new Vector2 (target.x, target.y) - new Vector2(transform.position.x, transform.position.y);
+        Vector2 lookDir = new Vector2(target.x, target.y) - new Vector2(entitySprite.position.x, entitySprite.position.y);
         float angle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90;
         Quaternion newRotation = Quaternion.Euler(0, 0, angle);
-        transform.rotation = Quaternion.Lerp(transform.rotation,newRotation,(Time.deltaTime*5)%1);
+        entitySprite.rotation = Quaternion.Lerp(entitySprite.rotation, newRotation, (Time.deltaTime * 5) % 1);
     }
-    
+
     private void Avoidance()
     {
         if (GameManager.Instance.Obstacles.Count == 0)
@@ -144,14 +157,30 @@ public class Enemy : Human {
             angry = true;
     }
 
+    private void DealDamage()
+    {
+        if (attackDelayTimer > 0f)
+        {
+            attackDelayTimer -= Time.deltaTime;
+            return;
+        }
+        
+        float distanceFromPlayer = Vector3.Distance(GameManager.Instance.Player.Position, Position) - GameManager.Instance.Player.ColliderRadius - ColliderRadius;
+        if (distanceFromPlayer > .1f)
+            return;
+        
+        GameManager.Instance.Player.HP -= damage;
+        attackDelayTimer = attackDelay;
+    }
+
     private void OnDrawGizmosSelected() {
         if (!Application.isPlaying)
             return;
         Gizmos.color = angry ? Color.red : Color.blue;
         Gizmos.DrawWireSphere(transform.position, ColliderRadius);
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(Flee(), .5f);
+        Gizmos.DrawWireSphere(fleeTarget, .5f);
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(Flee() + wanderOffset, .5f);
+        Gizmos.DrawWireSphere(fleeTarget + wanderOffset, .5f);
     }
 }
