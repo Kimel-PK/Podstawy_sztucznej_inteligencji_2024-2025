@@ -103,7 +103,11 @@ public class Enemy : Human {
                 courageDelayTimer -= Time.deltaTime;
             else
             {
-                courageObstacle = GameManager.Instance.Obstacles[Random.Range(0, GameManager.Instance.Obstacles.Count)];
+                List<Obstacle> obstaclesSorted = GameManager.Instance.Obstacles.OrderBy(obstacle => Vector3.Distance(obstacle.Position, Position)).ToList();
+                obstaclesSorted.RemoveAt(0);
+                
+                courageObstacle = GetRandomElementWithSquareProbability(ref obstaclesSorted);
+                
                 courageTimer = Random.Range(minCourageDuration, maxCourageDuration);
             }
         }
@@ -171,6 +175,37 @@ public class Enemy : Human {
         
         GameManager.Instance.Player.HP -= damage;
         attackDelayTimer = attackDelay;
+    }
+    
+    private Obstacle GetRandomElementWithSquareProbability(ref List<Obstacle> list)
+    {
+        // Total number of elements
+        int n = list.Count;
+
+        // Create a list to store cumulative probabilities
+        float[] cumulativeProbabilities = new float[n];
+        float totalProbability = 0;
+
+        // Calculate the probability as (1 - (i / (n-1))^2)
+        for (int i = 0; i < n; i++)
+        {
+            float probability = 1f - Mathf.Pow((float)i / (n - 1), 2);
+            totalProbability += probability;
+            cumulativeProbabilities[i] = totalProbability;
+        }
+
+        // Generate a random number between 0 and totalProbability
+        float randomValue = Random.Range(0f, totalProbability);
+
+        // Select the element based on the random value
+        for (int i = 0; i < n; i++)
+        {
+            if (randomValue <= cumulativeProbabilities[i])
+                return list[i];
+        }
+
+        // In case of rounding errors, return the last element
+        return list[^1];
     }
 
     private void OnDrawGizmosSelected() {
