@@ -370,6 +370,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e707a7a3e6787934888c9d340c71934e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  obstaclesParent: {fileID: 853562928}
   obstacles: []
 --- !u!4 &469067017
 Transform:
@@ -448,6 +449,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingPoint: {x: -3, y: -2}
   gridWidth: 0.4
+  agentRadius: 0.25
   topBorder: 5
   rightBorder: 6
   bottomBorder: -5

@@ -9,6 +9,7 @@ public class NavGraph : MonoBehaviour {
 
 	[SerializeField] private Vector2 startingPoint;
 	[SerializeField] private float gridWidth;
+	[SerializeField] private float agentRadius;
 	
 	[SerializeField] private float topBorder;
 	[SerializeField] private float rightBorder;
@@ -55,7 +56,7 @@ public class NavGraph : MonoBehaviour {
 			Vector2 currentPosition = enumerator.Current;
 			
 			// check if this point is valid to add to graph
-			if (!VerifyPoint(currentPosition)) {
+			if (!VerifyPoint(currentPosition, agentRadius)) {
 				pointsToConsider.Remove(currentPosition);
 				continue;
 			}
@@ -83,7 +84,7 @@ public class NavGraph : MonoBehaviour {
 		}
 	}
 
-	private bool VerifyPoint(Vector2 point) {
+	private bool VerifyPoint(Vector2 point, float agentRadius) {
 		// discard already added point
 		if (graphNodes.ContainsKey(point))
 			return false;
@@ -98,8 +99,11 @@ public class NavGraph : MonoBehaviour {
 		if (point.x < leftBorder)
 			return false;
 		
+		// discard point too close to obstacle
+		if (GameManager.Instance.IsCircleTouchingObstacle(point, agentRadius))
+			return false;
+		
 		// discard point inside any obstacle
-		// TODO return false if point is in obstacle
 		if (GameManager.Instance.IsPointInsideObstacle(point))
 			return false;
 		
