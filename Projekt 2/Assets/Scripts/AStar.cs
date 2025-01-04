@@ -5,7 +5,16 @@ using UnityEngine;
 public class AStar : MonoBehaviour {
 	
 	public static List<INode> Find (INode startNode, INode endNode) {
+		if (startNode == null) {
+			Debug.Log("startNode is null, aborting pathfinding");
+			return new List<INode>();
+		}
 		
+		if (endNode == null) {
+			Debug.Log("endNode is null, aborting pathfinding");
+			return new List<INode>();
+		}
+
 		List<INode> path = new();
 		List<PathNode> openList = new() { new PathNode(startNode) };
 		List<PathNode> closedList = new();

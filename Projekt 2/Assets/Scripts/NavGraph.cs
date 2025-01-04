@@ -2,14 +2,18 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class NavGraph : MonoBehaviour {
 
+	public static NavGraph Instance { get; private set; }
+	
 	public static Action OnNavGraphBuild = delegate { };
 
 	[SerializeField] private Vector2 startingPoint;
 	[SerializeField] private float gridWidth;
 	[SerializeField] private float agentRadius;
+	[SerializeField] private float graphPrecision = 0.001f;
 	
 	[SerializeField] private float topBorder;
 	[SerializeField] private float rightBorder;
@@ -19,12 +23,12 @@ public class NavGraph : MonoBehaviour {
 	[SerializeField] private bool animateGraphBuild;
 	[SerializeField] private float animationStepTime;
 	
-	private readonly Dictionary<Vector2, NavGraphNode> graphNodes = new();
+	private readonly Dictionary<Vector2Int, NavGraphNode> graphNodes = new();
 	
 	// exposed because of gizmo animation
-	private HashSet<Vector2> pointsToConsider = new();
+	private HashSet<Vector2Int> pointsToConsider = new();
 	
-	private readonly Vector2[] offsets = {
+	private readonly Vector2Int[] offsets = {
 		new(0, 1),   // Up
 		new(1, 1),   // Up-Right
 		new(1, 0),   // Right
@@ -35,28 +39,58 @@ public class NavGraph : MonoBehaviour {
 		new(-1, 1)   // Up-Left
 	};
 	
+	private void Awake() {
+		if (!Instance)
+			Instance = this;
+		else
+			Destroy(gameObject);
+	}
+    
 	public async void Start() {
 		await BuildGraph();
 		Debug.Log("NavGraph built");
 		OnNavGraphBuild?.Invoke();
 	}
 
+	public NavGraphNode GetClosestNode(Vector2 position) {
+		float minDistance = float.MaxValue;
+		NavGraphNode closestNode = null;
+
+		foreach (KeyValuePair<Vector2Int, NavGraphNode> kvp in graphNodes)
+		{
+			float distance = Vector2.Distance(position * 1000, kvp.Key);
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				closestNode = kvp.Value;
+			}
+		}
+		return closestNode;
+	}
+	
+	// DEBUG
+	public NavGraphNode GetRandomNode() {
+		List<Vector2Int> keys = new(graphNodes.Keys);
+		Vector2Int randomKey = keys[Random.Range(0, keys.Count)];
+		return graphNodes[randomKey];
+	}
+
 	private async UniTask BuildGraph() {
 		graphNodes.Clear();
 		
-		pointsToConsider = new HashSet<Vector2> { startingPoint };
+		pointsToConsider = new HashSet<Vector2Int> { Vector2Int.FloorToInt(startingPoint * 1000) };
 
 		int infiniteLoopBreaker = 0;
 		while (pointsToConsider.Count > 0 && infiniteLoopBreaker < 100000) {
 			infiniteLoopBreaker++;
 
 			// get an element from hash set
-			HashSet<Vector2>.Enumerator enumerator = pointsToConsider.GetEnumerator();
+			HashSet<Vector2Int>.Enumerator enumerator = pointsToConsider.GetEnumerator();
 			enumerator.MoveNext();
-			Vector2 currentPosition = enumerator.Current;
+			Vector2Int currentPosition = enumerator.Current;
 			
 			// check if this point is valid to add to graph
-			if (!VerifyPoint(currentPosition, agentRadius)) {
+			if (!VerifyPoint((Vector2)currentPosition * graphPrecision)) {
 				pointsToConsider.Remove(currentPosition);
 				continue;
 			}
@@ -69,13 +103,15 @@ public class NavGraph : MonoBehaviour {
 			pointsToConsider.Remove(currentPosition);
 
 			// get all new positions and add them to set if not already in graph 
-			foreach (Vector2 offset in offsets) {
-				Vector2 newNodePosition = currentPosition + offset * gridWidth;
+			foreach (Vector2Int offset in offsets) {
+				Vector2Int newNodePosition = currentPosition + Vector2Int.FloorToInt((Vector2)offset * gridWidth * 1000);
 				
 				if (graphNodes.ContainsKey(newNodePosition)) {
 					// add edges to current point and already added
-					graphNodes[currentPosition].Neighbours.Add(graphNodes[newNodePosition]);
-					graphNodes[newNodePosition].Neighbours.Add(graphNodes[currentPosition]);
+					if (!graphNodes[currentPosition].Neighbours.Contains(graphNodes[newNodePosition]))
+						graphNodes[currentPosition].Neighbours.Add(graphNodes[newNodePosition]);
+					if (!graphNodes[newNodePosition].Neighbours.Contains(graphNodes[currentPosition]))
+						graphNodes[newNodePosition].Neighbours.Add(graphNodes[currentPosition]);
 					continue;
 				}
 
@@ -84,9 +120,9 @@ public class NavGraph : MonoBehaviour {
 		}
 	}
 
-	private bool VerifyPoint(Vector2 point, float agentRadius) {
+	private bool VerifyPoint(Vector2 point) {
 		// discard already added point
-		if (graphNodes.ContainsKey(point))
+		if (graphNodes.ContainsKey(Vector2Int.FloorToInt(point * 1000)))
 			return false;
 		
 		// discard point outside level bounds
@@ -128,14 +164,13 @@ public class NavGraph : MonoBehaviour {
 
 		Gizmos.color = Color.yellow;
 		foreach (Vector2 point in pointsToConsider) {
-			Gizmos.DrawSphere(point, .1f);
+			Gizmos.DrawSphere(point * graphPrecision, .1f);
 		}
 		
 		Gizmos.color = Color.green;
-		foreach (KeyValuePair<Vector2,NavGraphNode> navGraphNode in graphNodes) {
-			Gizmos.DrawSphere(navGraphNode.Key, .1f);
+		foreach (KeyValuePair<Vector2Int,NavGraphNode> navGraphNode in graphNodes) {
 			foreach (INode node in navGraphNode.Value.Neighbours)
-				Gizmos.DrawLine(navGraphNode.Key, node.Position);
+				Gizmos.DrawLine((Vector2)navGraphNode.Key * graphPrecision, node.Position * graphPrecision);
 		}
 	}
 

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour {
 
-	public static GameManager Instance { get; set; }
+	public static GameManager Instance { get; private set; }
 
 	[SerializeField] private Transform obstaclesParent;
 	[SerializeField] private List<Obstacle> obstacles;
