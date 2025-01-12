@@ -1302,7 +1302,7 @@ GameObject:
   - component: {fileID: 1433744667}
   - component: {fileID: 1433744668}
   m_Layer: 0
-  m_Name: CollectiblesManager
+  m_Name: CollectiblesSpawner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1335,9 +1335,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c199ff026b3fed4a85461f47913a07c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MedKits: []
-  ArmorKits: []
-  AmmoKits: []
   navGraph: {fileID: 484584372}
   medKitPrefab: {fileID: 5506149735334324749, guid: 1f6bc80da0b15d648a23e8586f24533a, type: 3}
   armorKitPrefab: {fileID: 7677476257374046681, guid: 04fad8679e886824fa752435c23cb6a4, type: 3}
