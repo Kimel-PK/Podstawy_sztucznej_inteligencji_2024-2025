@@ -4,12 +4,16 @@ using UnityEngine;
 
 public class Obstacle : MonoBehaviour {
     
+    public static List<Obstacle> All = new ();
+    
     [SerializeField] private LineRenderer lineRenderer;
-
     [SerializeField] private Transform pointsParent;
-    
     [SerializeField] private List<Edge> edges = new();
-    
+
+    private void Awake() {
+        All.Add(this);
+    }
+
     private void Start() {
         if (!lineRenderer || pointsParent.childCount == 0)
             return;
@@ -33,6 +37,14 @@ public class Obstacle : MonoBehaviour {
 
         lineRenderer.positionCount = positions.Length;
         lineRenderer.SetPositions(positions);
+    }
+    
+    public static bool IsCircleTouchingAnyObstacle(Vector2 point, float agentRadius) {
+        foreach (Obstacle obstacle in All) {
+            if (obstacle.IsCircleTouchingObstacle(point, agentRadius))
+                return true;
+        }
+        return false;
     }
     
     public bool IsCircleTouchingObstacle(Vector2 point, float radius) {
@@ -64,6 +76,14 @@ public class Obstacle : MonoBehaviour {
                 return true;
         }
 
+        return false;
+    }
+    
+    public static bool IsPointInsideAnyObstacle(Vector2 point) {
+        foreach (Obstacle obstacle in All) {
+            if (obstacle.IsPointInsideObstacle(point))
+                return true;
+        }
         return false;
     }
 

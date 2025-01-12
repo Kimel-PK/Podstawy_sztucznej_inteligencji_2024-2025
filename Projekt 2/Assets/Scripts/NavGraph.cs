@@ -68,7 +68,6 @@ public class NavGraph : MonoBehaviour {
 		return closestNode;
 	}
 	
-	// DEBUG
 	public NavGraphNode GetRandomNode() {
 		List<Vector2Int> keys = new(graphNodes.Keys);
 		Vector2Int randomKey = keys[Random.Range(0, keys.Count)];
@@ -136,17 +135,17 @@ public class NavGraph : MonoBehaviour {
 			return false;
 		
 		// discard point too close to obstacle
-		if (GameManager.Instance.IsCircleTouchingObstacle(point, agentRadius))
+		if (Obstacle.IsCircleTouchingAnyObstacle(point, agentRadius))
 			return false;
 		
 		// discard point inside any obstacle
-		if (GameManager.Instance.IsPointInsideObstacle(point))
+		if (Obstacle.IsPointInsideAnyObstacle(point))
 			return false;
 		
 		return true;
 	}
 
-	private void OnDrawGizmos() {
+	private void OnDrawGizmosSelected() {
 		Gizmos.color = Color.blue;
 		Gizmos.DrawSphere(startingPoint, .2f);
 
