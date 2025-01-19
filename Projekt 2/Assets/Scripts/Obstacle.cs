@@ -6,9 +6,10 @@ public class Obstacle : MonoBehaviour {
     
     public static List<Obstacle> All = new ();
     
+    public List<Edge> edges = new();
+    
     [SerializeField] private LineRenderer lineRenderer;
     [SerializeField] private Transform pointsParent;
-    [SerializeField] private List<Edge> edges = new();
 
     private void Awake() {
         All.Add(this);

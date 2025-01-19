@@ -12,9 +12,9 @@ public class DeadState : AgentState {
             return;
         }
 
-        Agent.Hp = 100;
-        Agent.Armor = 100;
-        Agent.Ammo = 20;
+        Agent.Hp = Agent.MaxHp;
+        Agent.Armor = Agent.MaxArmor;
+        Agent.Ammo = Agent.MaxAmmo;
         
         NavGraph.NavGraphNode randomNode = NavGraph.Instance.GetRandomNode();
         Agent.transform.position = randomNode.Position / 1000f;
@@ -25,6 +25,7 @@ public class DeadState : AgentState {
         Agent.path.Clear();
         Agent.rotationTarget = Vector3.zero;
         Agent.model.SetActive(false);
+        Agent.Deads++;
     }
 
     public override void OnExit() {

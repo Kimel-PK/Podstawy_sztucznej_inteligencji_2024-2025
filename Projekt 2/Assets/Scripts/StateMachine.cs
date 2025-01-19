@@ -18,15 +18,19 @@ public class StateMachine {
             return;
         
         foreach (Transition transition in transitions) {
-            if (currentState == transition.newState || !transition.EvaluateCondition())
+            if (!transition.EvaluateCondition())
                 continue;
-            
+
+            if (currentState == transition.newState) {
+                currentState?.Update();
+                return;
+            }
+
             currentState?.OnExit();
             currentState = transition.newState;
             currentState?.OnEnter();
             return;
         }
-        currentState?.Update();
     }
 
     public void AddTransition(Func<bool> condition, AgentState newState) {

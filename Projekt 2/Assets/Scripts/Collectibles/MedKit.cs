@@ -10,7 +10,7 @@ public class MedKit : Collectible {
 	}
 
 	protected override void OnCollect(Agent agent) {
-		agent.Hp = 100f;
+		agent.Hp = agent.MaxHp;
 		All.Remove(this);
 	}
 }

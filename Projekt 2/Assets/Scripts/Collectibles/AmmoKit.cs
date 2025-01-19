@@ -10,7 +10,7 @@ public class AmmoKit : Collectible {
     }
     
     protected override void OnCollect(Agent agent) {
-        agent.Ammo = 20;
+        agent.Ammo = agent.MaxAmmo;
         All.Remove(this);
     }
 }

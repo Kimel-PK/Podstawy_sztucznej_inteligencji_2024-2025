@@ -42,6 +42,16 @@ public class CollectiblesSpawner : MonoBehaviour {
         
         NavGraph.NavGraphNode randomNode = navGraph.GetRandomNode();
 
+        if (AmmoKit.All.Count == 0) {
+            Instantiate(ammoKitPrefab, randomNode.Position / 1000f, Quaternion.identity, transform);
+            return;
+        }
+
+        if (MedKit.All.Count == 0) {
+            Instantiate(medKitPrefab, randomNode.Position / 1000f, Quaternion.identity, transform);
+            return;
+        }
+
         switch (Random.Range(0, 3)) {
             case 0:
                 Instantiate(medKitPrefab, randomNode.Position / 1000f, Quaternion.identity, transform);

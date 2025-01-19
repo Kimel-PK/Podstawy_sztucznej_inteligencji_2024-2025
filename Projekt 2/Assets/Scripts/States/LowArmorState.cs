@@ -9,7 +9,11 @@ public class LowArmorState : AgentState {
 			return;
 		}
 
-		Agent.rotationTarget = Agent.path[0].Position / 1000f;
+		Agent closestEnemy = Agent.GetClosestEnemy();
+		if (closestEnemy)
+			Agent.rotationTarget = closestEnemy.transform.position;
+		else
+			Agent.rotationTarget = Agent.path[0].Position / 1000f;
 	}
 
 	public override void OnEnter() {

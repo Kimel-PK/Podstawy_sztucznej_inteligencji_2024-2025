@@ -10,7 +10,7 @@ public class ArmorKit : Collectible {
 	}
 	
 	protected override void OnCollect(Agent agent) {
-		agent.Armor = 100f;
+		agent.Armor = agent.MaxArmor;
 		All.Remove(this);
 	}
 }
